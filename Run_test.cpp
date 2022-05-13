@@ -17,8 +17,35 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include "tools.h"
 
 using namespace std;
+
+void checkForErrors(UART u)
+{
+
+    //delay(5000);
+    Frame f, f2, f3;
+    GetRegistry(STEVAL_REGISTERS::FLAGS, STEVAL_REGISTERS_LEN::GET, 1, u, &f);
+    long fd;
+    switch ((int)f.data)
+    {
+    case 2:
+        fd = start_log(LOG_PATH);
+        printf("[ERROR] Over voltage\n");
+        stop_log(fd);
+        return;
+    case 32:
+        fd = start_log(LOG_PATH);
+        printf("[ERROR] SpeedFeedback\n");
+        stop_log(fd);
+        FaultAck(1, u, &f2);
+        StartMotor(1, u, &f3);
+        return;
+    default:
+        return;
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -63,8 +90,9 @@ int main(int argc, char* argv[])
                 i_word = stoi(word);
                 input.push_back(i_word);
             }
-            all_ins.push_back(input);				
+            all_ins.push_back(input);
 		}
+
     for (int j= 0; j < all_ins.size(); j++){
     StartMotor(1,uart, &f_start);
         //for every val in input vector
@@ -80,6 +108,8 @@ int main(int argc, char* argv[])
                 OutputFile << get_angle_s << ", ";
 
                 cout << "Measured angle: " << get_angle << endl;
+
+                checkForErrors(uart);
             }
             //print exception
             catch(const exception& ex){
