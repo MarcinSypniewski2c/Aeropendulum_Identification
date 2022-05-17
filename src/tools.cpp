@@ -15,7 +15,7 @@
 #include <chrono>
 #include <iostream>
 #include <string.h>
-#include "inc/tools.h"
+#include "tools.h"
 
 void print_log_time()
 {

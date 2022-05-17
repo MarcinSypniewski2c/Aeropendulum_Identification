@@ -1,4 +1,4 @@
-#include "inc/AS5600.h"
+#include "AS5600.h"
 #include <wiringPiI2C.h>
 #include <stdio.h>
 
