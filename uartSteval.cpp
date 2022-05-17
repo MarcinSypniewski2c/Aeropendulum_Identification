@@ -24,7 +24,7 @@
 #include "uartSteval.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define DEBUG 0 //0
+#define DEBUG 1 //0
 
 #if DEBUG
 void printf_debug(const char * format, ...)
@@ -48,7 +48,7 @@ UART_STATUS receive(Frame *cmd,int connection)
 {
     int j=0;
     int* array = new int[10];
-    printf_debug("Recive: ");
+    printf_debug("RECEIVE: ");
     while (serialDataAvail(connection))
     {
         array[j] = serialGetchar(connection);
@@ -59,7 +59,7 @@ UART_STATUS receive(Frame *cmd,int connection)
     if(array[0]!=0xff)
     {
         *cmd = Frame(array,j);
-        printf_debug("Odebrana wartość: %d \n",cmd->data);
+        printf_debug("RECEIVED DATA: %d \n",cmd->data);
     }        
     else
         printf_debug("ERROR\n");
@@ -70,59 +70,48 @@ UART_STATUS sendData(int con, int data,int l)
 {
     for(int i = 0;i<l;i++){
       serialPutchar(con,(data >> i*8) & 0xFF);
-      printf_debug("%02X ", (data >> i*8) & 0xFF); 
+      printf_debug("%02x ", (data >> i*8) & 0xFF); 
     }
     printf_debug("\n");
     return UART_OK;
 }
 
-UART_STATUS send(Frame cmd, UART uart, Frame* f, bool cmd_show)
+UART_STATUS send(Frame cmd, UART uart, Frame* f)
 {
-	/* THIS CANNOT BE DONE ON EVERY 'send' CALL!
-    int connection = serialOpen("/dev/ttyACM0",uart.baud);
+    int connection = uart.handler;
 	
     if(connection < 0)
     {
+		printf_debug("Unable to open serial port\n");
         return UART_CONNECTION_ERROR;
     }
-	*/
 
     serialPutchar(uart.handler, (cmd.motorId<<5)+(int)cmd.frameCode);
     serialPutchar(uart.handler, (int)cmd.payload);
     serialPutchar(uart.handler, (int)cmd.reg);
 
-    if (cmd_show)
-    {
-        printf_debug("Send: ");
-        //std::cout << std::hex << (cmd.motorId<<5)+(int)cmd.frameCode<<" ";
-        //std::cout << std::hex << (int)cmd.payload<<" ";
-        //std::cout << std::hex << (int)cmd.reg<<" ";
-    }
+    printf_debug("SEND: ");
+    printf_debug("%02x ", (cmd.motorId<<5)+(int)cmd.frameCode);
+    printf_debug("%02x ", (int)cmd.payload);
+    printf_debug("%02x ",(int)cmd.reg);
     
     if(cmd.data!=NO_DATA)
     {
-        UART_STATUS resD = sendData(connection,cmd.data,(int)cmd.payload-1);
+        UART_STATUS resD = sendData(uart.handler,cmd.data,(int)cmd.payload-1);
         if(resD != UART_OK)
             return resD;
     }
 
-    serialPutchar(connection,cmd.CRC);
+    serialPutchar(uart.handler, cmd.crc);
     
-    if (cmd_show)
-    {
-        //std::cout << std::hex << cmd.CRC<<" ";
-        printf_debug("\n");
-    }
+    printf_debug("%02x \n",(int)cmd.crc);
 
     Frame recCommand = Frame();
-    //delay(3);
-    receive(&recCommand, uart.handler);
-	
+    receive(&recCommand, uart.handler);	
     *f = recCommand;
-    
-	
-	//serialClose(connection);
-	
+    	
+	delay(2); // TODO: Why mysterious delay is required ???
+		
     return UART_OK;
 }
 
@@ -153,7 +142,7 @@ UART_STATUS SetRegistry(STEVAL_REGISTERS reg, STEVAL_REGISTERS_LEN regL, int mot
 UART_STATUS GetRegistry(STEVAL_REGISTERS reg, STEVAL_REGISTERS_LEN regL, int motorId, UART uart,Frame* f)
 {
     Frame cmd = Frame(1,FRAME_CODES::GET,reg,(int)regL,NO_DATA);
-    printf_debug("data:%d:%d",cmd.data, f->data);
+    printf_debug("DATA:%d:%d",cmd.data, f->data);
     return send(cmd,uart,f);
 }
 
