@@ -1,5 +1,5 @@
 /**
- * Compile: g++ -o run_test Run_test.cpp uartSteval.cpp AS5600.cpp -lwiringPi
+ * Compile: g++ -o run_test Run_test.cpp inc/uartSteval.cpp inc/AS5600.cpp -lwiringPi
  * To run file with default file names: ./run_test
  * To run with user defined file names: ./run_test -i in_name.csv -o out_name.csv
  */
@@ -23,7 +23,6 @@ using namespace std;
 
 void checkForErrors(UART u)
 {
-
     //delay(5000);
     Frame f, f2, f3;
     GetRegistry(STEVAL_REGISTERS::FLAGS, STEVAL_REGISTERS_LEN::GET, 1, u, &f);
@@ -33,6 +32,8 @@ void checkForErrors(UART u)
     case 2:
         fd = start_log(LOG_PATH);
         printf("[ERROR] Over voltage\n");
+        FaultAck(1, u, &f2);
+        StartMotor(1, u, &f3);
         stop_log(fd);
         return;
     case 32:
@@ -58,15 +59,15 @@ int main(int argc, char* argv[])
         out_name = argv[4];
     }
     if (argc == 1){
-        in_name = "mtest.csv";
+        in_name = "signals_aero_test.csv";
         out_name = "m2test.csv";
     }
     //Init
     UART uart;
     uart.baud = 38400;
     Frame f_start, f_set, f2, ff2, f_start2, f_set2;
-    int16_t num_iter = 5;
-    uint16_t speed = 3000;
+    int num_iter = 5;
+    int speed = 3000;
 
     int as5600;
     AS5600_Init(&as5600);
@@ -78,22 +79,19 @@ int main(int argc, char* argv[])
     string line, word;
     InputFile.open(in_name);
 
-    vector<vector<int>> all_ins;
     vector<int> input;
     int i_word;
-    //read input into vector
-    while(getline(InputFile, line)){
-			stringstream str(line);
-            input.clear();
+    //read single line input into vector
+    getline(InputFile, line);
+    stringstream strl(line);
+    input.clear();
  
-			while(getline(str, word, ',')){
-                i_word = stoi(word);
-                input.push_back(i_word);
-            }
-            all_ins.push_back(input);
-		}
+        while(getline(strl, word, ',')){
+            i_word = stoi(word);
+            input.push_back(i_word);
+        }
 
-    for (int j= 0; j < all_ins.size(); j++){
+    for (int j= 0; j < 1; j++){
     StartMotor(1,uart, &f_start);
         //for every val in input vector
         for (int i = 0; i < input.size(); i++){
@@ -113,21 +111,12 @@ int main(int argc, char* argv[])
             }
             //print exception
             catch(const exception& ex){
-
                 cout << "Error: " << ex.what() << endl;
-
-                //FaultAck(1,uart,&f2);
-                //StopMotor(1,uart,&ff2);
-
-                //StartMotor(1,uart, &f_start2);
-                //SetMotorRefSpeed(speed, 1, uart, &f_set2);
-
-                //cout << "RESET" << endl;
             }
         }
     OutputFile << ";" << endl;
     StopMotor(1,uart,&ff2);
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    this_thread::sleep_for(chrono::milliseconds(3000));
     }
 
     OutputFile.close();
