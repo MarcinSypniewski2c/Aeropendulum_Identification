@@ -71,7 +71,10 @@ struct Frame
         payload = _payload;
         data = _data;
 		
-		// Encode frame @see souce_file_???.c lines ???-??? [TODO]
+		/** Encode frame 
+		  * @see [STEVAL-SPIN3021 PROCJECT DIR]/Src/motor_control_protocol.c lines 162-608
+		  * @see [STEVAL-SPIN3021 PROCJECT DIR]/MCSDK_v5.4.8/MotorControl/MCSDK/UILibrary/Src/frame_communication_protocol.c lines 54-123
+		  */
         if (data == NO_DATA)
             crc = ((motorId << 5) + (int)frameCode) + (int)reg + payload;
         else
@@ -95,7 +98,10 @@ struct Frame
      */
     Frame(int* array, int lenght)
     {
-		// Decode frame @see souce_file_???.c lines ???-??? [TODO]
+		/** Decode frame 
+		  * @see [STEVAL-SPIN3021 PROCJECT DIR]/Src/motor_control_protocol.c lines 162-608
+		  * @see [STEVAL-SPIN3021 PROCJECT DIR]/MCSDK_v5.4.8/MotorControl/MCSDK/UILibrary/Src/frame_communication_protocol.c lines 54-123
+		  */
         motorId = array[0]>>5;
         frameCode = (FRAME_CODES)(array[0]&0x1F);
         payload = array[1];
@@ -117,7 +123,10 @@ struct Frame
      */
     int getCommad()
     {
-        //TODO: add data
+        /** Encode frame 
+		  * @see [STEVAL-SPIN3021 PROCJECT DIR]/Src/motor_control_protocol.c lines 162-608
+		  * @see [STEVAL-SPIN3021 PROCJECT DIR]/MCSDK_v5.4.8/MotorControl/MCSDK/UILibrary/Src/frame_communication_protocol.c lines 54-123
+		  */
         return ((((motorId << 5) + (int)frameCode << 8) + (int)reg << 8) + payload << 8) + crc;
 		
 		
@@ -147,7 +156,7 @@ struct Frame
 /**
  * @brief Receive UART frame.
  * 
- * @param[in] cmd        : Received frame
+ * @param[out] cmd        : Received frame
  * @param[in] connection : UART connection id
  * @return UART_STATUS Receiving status
  */
@@ -171,7 +180,7 @@ UART_STATUS receive(Frame *cmd, int connection);
  * @param[in] uart    : UART object
  * @return UART_STATUS Starting motor result
  */
-UART_STATUS StartMotor(int motorId, UART uart,Frame* f);
+UART_STATUS StartMotor(int motorId, UART uart, Frame* f);
  
 /**
  * @brief Execute stop motor command.
@@ -180,7 +189,7 @@ UART_STATUS StartMotor(int motorId, UART uart,Frame* f);
  * @param[in] uart    : UART object
  * @return UART_STATUS  Stopping motor result
  */
-UART_STATUS StopMotor(int motorId, UART uart,Frame* f);
+UART_STATUS StopMotor(int motorId, UART uart, Frame* f);
 
 /**
  * @brief Set the motor ramp final speed registry.
