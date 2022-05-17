@@ -11,7 +11,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <wiringSerial.h>
-#include "uartSteval.h"
+#include "inc/uartSteval.h"
 #include <stdarg.h>
 
 #define DEBUG 0 //0
