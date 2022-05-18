@@ -171,7 +171,7 @@ UART_STATUS receive(Frame *cmd, int connection);
  * @param[in] cmd_show : Optional parameter, if true show sending fame in console
  * @return UART_STATUS Sending result
  */
- UART_STATUS send(Frame cmd, UART uart, Frame* f, bool cmd_show);
+ UART_STATUS send(Frame cmd, UART uart, Frame* f);
  
 /**
  * @brief Execute start motor command.

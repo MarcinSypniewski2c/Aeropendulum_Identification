@@ -76,89 +76,76 @@ UART_STATUS sendData(int con, int data,int l)
     return UART_OK;
 }
 
-UART_STATUS send(Frame cmd, UART uart, Frame* f, bool cmd_show)
+UART_STATUS send(Frame cmd, UART uart, Frame* f)
 {
-	//THIS CANNOT BE DONE ON EVERY 'send' CALL!
-    int connection = serialOpen("/dev/ttyACM0",uart.baud);
+    int connection = uart.handler;
 	
     if(connection < 0)
     {
+		printf_debug("Unable to open serial port\n");
         return UART_CONNECTION_ERROR;
     }
-	
 
-    serialPutchar(connection, (cmd.motorId<<5)+(int)cmd.frameCode);
-    serialPutchar(connection, (int)cmd.payload);
-    serialPutchar(connection, (int)cmd.reg);
+    serialPutchar(uart.handler, (cmd.motorId<<5)+(int)cmd.frameCode);
+    serialPutchar(uart.handler, (int)cmd.payload);
+    serialPutchar(uart.handler, (int)cmd.reg);
 
-    if (cmd_show)
-    {
-        printf_debug("Send: ");
-        //std::cout << std::hex << (cmd.motorId<<5)+(int)cmd.frameCode<<" ";
-        //std::cout << std::hex << (int)cmd.payload<<" ";
-        //std::cout << std::hex << (int)cmd.reg<<" ";
-    }
+    printf_debug("SEND: ");
+    printf_debug("%02x ", (cmd.motorId<<5)+(int)cmd.frameCode);
+    printf_debug("%02x ", (int)cmd.payload);
+    printf_debug("%02x ",(int)cmd.reg);
     
     if(cmd.data!=NO_DATA)
     {
-        UART_STATUS resD = sendData(connection,cmd.data,(int)cmd.payload-1);
+        UART_STATUS resD = sendData(uart.handler,cmd.data,(int)cmd.payload-1);
         if(resD != UART_OK)
             return resD;
     }
 
-    serialPutchar(connection,cmd.crc);
+    serialPutchar(uart.handler, cmd.crc);
     
-    if (cmd_show)
-    {
-        //std::cout << std::hex << cmd.CRC<<" ";
-        printf_debug("\n");
-    }
+    printf_debug("%02x \n",(int)cmd.crc);
 
-    Frame recCommand = Frame();
-    //delay(3);
-    receive(&recCommand,connection);
-	
-    *f = recCommand;
-    
-	
-	serialClose(connection);
-	
+    receive(f, uart.handler);	
+    	
+	delay(2); // TODO: Why mysterious delay is required ???
+		
     return UART_OK;
 }
 
 UART_STATUS StartMotor(int motorId, UART uart,Frame* f)
 {
     Frame  cmd = Frame(1,FRAME_CODES::EXE,STEVAL_REGISTERS::START_MOTOR,(int)STEVAL_REGISTERS_LEN::EXE_CMD, NO_DATA);
-    return send(cmd, uart,f, false);
+    return send(cmd, uart,f);
 }
 
 UART_STATUS StopMotor(int motorId, UART uart,Frame* f)
 {
     Frame  cmd = Frame(1,FRAME_CODES::EXE,STEVAL_REGISTERS::STOP_MOTOR,(int)STEVAL_REGISTERS_LEN::EXE_CMD, NO_DATA);
-    return send(cmd,uart,f, false);
+    return send(cmd,uart,f);
 }
 
 UART_STATUS SetMotorRefSpeed(int ref, int motorId, UART uart,Frame* f)
 {
     Frame  cmd = Frame(1,FRAME_CODES::SET,STEVAL_REGISTERS::RAMP_FIN_SPEED,(int)STEVAL_REGISTERS_LEN::RAMP_FIN_SPEED, ref);
-    return send(cmd,uart,f,false);
+    return send(cmd,uart,f);
 }
 
 UART_STATUS SetRegistry(STEVAL_REGISTERS reg, STEVAL_REGISTERS_LEN regL, int motorId, UART uart, int data,Frame* f)
 {
     Frame cmd = Frame(1,FRAME_CODES::GET,reg,(int)regL,data);
-    return send(cmd,uart,f,false);
+    return send(cmd,uart,f);
 }
 
 UART_STATUS GetRegistry(STEVAL_REGISTERS reg, STEVAL_REGISTERS_LEN regL, int motorId, UART uart,Frame* f)
 {
     Frame cmd = Frame(1,FRAME_CODES::GET,reg,(int)regL,NO_DATA);
     printf_debug("data:%d:%d",cmd.data, f->data);
-    return send(cmd,uart,f,false);
+    return send(cmd,uart,f);
 }
 
 UART_STATUS FaultAck(int motorId, UART uart, Frame *f)
 {
     Frame cmd = Frame(1, FRAME_CODES::EXE, STEVAL_REGISTERS::FAULT_ACT, (int)STEVAL_REGISTERS_LEN::EXE_CMD, NO_DATA);
-    return send(cmd, uart, f,false);
+    return send(cmd, uart, f);
 }
