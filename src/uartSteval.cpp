@@ -108,7 +108,7 @@ UART_STATUS send(Frame cmd, UART uart, Frame* f)
 
     receive(f, uart.handler);	
     	
-	delay(2); // TODO: Why mysterious delay is required ???
+	delay(5); // TODO: Why mysterious delay is required ???
 		
     return UART_OK;
 }
